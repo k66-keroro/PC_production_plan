@@ -21,7 +21,7 @@ def get_completion_history():
     except Exception as e:
         # テーブルがない場合も空のDataFrameを返す
         print(f"履歴テーブルの読み込みに失敗: {e}")
-        return pd.DataFrame(columns=['子指図番号', '完了日', '計画終了日', '所要日'])
+        return pd.DataFrame(columns=['子指図番号', '完了日', '基準計画終了日'])
 
 # --- UIコンポーネント ---
 def display_compliance_dashboard():
@@ -35,10 +35,10 @@ def display_compliance_dashboard():
         return
 
     history_df['完了日'] = pd.to_datetime(history_df['完了日'])
-    history_df['計画終了日'] = pd.to_datetime(history_df['計画終了日'])
+    history_df['基準計画終了日'] = pd.to_datetime(history_df['基準計画終了日'])
 
     # 遵守状況を計算
-    history_df['遵守'] = history_df['完了日'] <= history_df['計画終了日']
+    history_df['遵守'] = history_df['完了日'] <= history_df['基準計画終了日']
 
     today = pd.Timestamp.now()
 
@@ -141,39 +141,39 @@ if st.session_state.data_loaded:
 
     # --- フィルター機能 ---
     with st.expander("絞り込みフィルター", expanded=True):
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         
         with col1:
             # 所要日フィルター
             df_display['所要日_dt'] = pd.to_datetime(df_display['所要日'], errors='coerce')
             min_date = df_display['所要日_dt'].min()
             max_date = df_display['所要日_dt'].max()
-            
             if pd.notna(min_date) and pd.notna(max_date):
-                date_range = st.date_input(
-                    "所要日の範囲",
-                    value=(min_date, max_date),
-                    min_value=min_date,
-                    max_value=max_date,
-                    format="YYYY/MM/DD"
-                )
+                date_range = st.date_input("所要日の範囲", value=(min_date, max_date), min_value=min_date, max_value=max_date, format="YYYY/MM/DD")
                 if len(date_range) == 2:
                     df_display = df_display[df_display['所要日_dt'].between(pd.to_datetime(date_range[0]), pd.to_datetime(date_range[1]))]
             else:
                 st.info("所要日データがありません。")
 
         with col2:
-            # MRP管理者グループフィルター
-            manager_groups = sorted(df_display['MRP管理者グループ'].dropna().unique())
-            selected_groups = st.multiselect("MRP管理者グループ", options=manager_groups, default=manager_groups)
-            df_display = df_display[df_display['MRP管理者グループ'].isin(selected_groups)]
+            # 子指図計画終了日フィルター
+            df_display['計画終了日_dt'] = pd.to_datetime(df_display['子指図計画終了日'], errors='coerce')
+            min_p_date = df_display['計画終了日_dt'].min()
+            max_p_date = df_display['計画終了日_dt'].max()
+            if pd.notna(min_p_date) and pd.notna(max_p_date):
+                p_date_range = st.date_input("子指図計画終了日の範囲", value=(min_p_date, max_p_date), min_value=min_p_date, max_value=max_p_date, format="YYYY/MM/DD")
+                if len(p_date_range) == 2:
+                    df_display = df_display[df_display['計画終了日_dt'].between(pd.to_datetime(p_date_range[0]), pd.to_datetime(p_date_range[1]))]
+            else:
+                st.info("計画終了日データがありません。")
 
         with col3:
-            # 進捗フィルター
-            progress_status = sorted(df_display['進捗'].dropna().unique())
-            selected_progress = st.multiselect("進捗", options=progress_status, default=progress_status)
-            df_display = df_display[df_display['進捗'].isin(selected_progress)]
-            
+            # 生産タイプフィルター
+            prod_types = sorted(df_display['生産タイプ'].dropna().unique())
+            selected_types = st.multiselect("生産タイプ", options=prod_types, default=prod_types)
+            df_display = df_display[df_display['生産タイプ'].isin(selected_types)]
+
+        with col4:
             # 遵守状況フィルター
             compliance_status = sorted(df_display['遵守状況'].dropna().unique())
             selected_compliance = st.multiselect("遵守状況", options=compliance_status, default=compliance_status)
@@ -183,9 +183,7 @@ if st.session_state.data_loaded:
     display_columns = [
         'No', '親指図番号', '親品目コード', '親品目テキスト', '子指図番号', '子品目コード',
         '子品目テキスト', '所要日', '子指図計画開始日', '子指図計画終了日', '計画数量',
-        '進捗', '完成日', '子MRP管理者', 'MRP管理者グループ', '遵守状況',
-        # 詳細進捗カラム
-        '工程(子)', 'C', 'A', 'C,A以外', '検査'
+        '進捗', '完了日', '基準計画終了日', '子MRP管理者', '生産タイプ', '遵守状況'
     ]
     # 存在しないカラムを除外
     display_columns = [col for col in display_columns if col in df_display.columns]
