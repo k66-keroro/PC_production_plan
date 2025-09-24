@@ -1,13 +1,9 @@
 import pandas as pd
 import sqlite3
 import os
-import sys
 
-# プロジェクトルートをsys.pathに追加
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
-from src.database.connection import get_db_connection
-from src.utils.config import LOCAL_DATA_PATHS, ENCODING, ZP02_COLUMNS, ZP51N_COLUMNS
+from ..database.connection import get_db_connection
+from ..utils.config import LOCAL_DATA_PATHS, ENCODING, ZP02_COLUMNS, ZP51N_COLUMNS
 
 def import_data_from_files():
     """
@@ -76,34 +72,3 @@ def _load_and_insert(conn: sqlite3.Connection, file_path: str, table_name: str, 
     except Exception as e:
         print(f"'{file_path}' の処理中にエラーが発生しました: {e}")
         raise
-
-
-if __name__ == '__main__':
-    # このスクリプトを直接実行した場合のテスト処理
-    print("--- データインポーターのテスト実行 ---")
-
-    # 既存のDBファイルがあれば削除してクリーンな状態でテスト
-    db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data', 'production.db')
-    if os.path.exists(db_path):
-        os.remove(db_path)
-        print(f"既存のデータベースファイル '{db_path}' を削除しました。")
-
-    success = import_data_from_files()
-
-    if success:
-        print("\n--- インポート結果の検証 ---")
-        try:
-            conn = get_db_connection()
-            # zp02テーブルの件数を確認
-            zp02_count = pd.read_sql_query("SELECT COUNT(*) FROM zp02", conn).iloc[0, 0]
-            print(f"zp02テーブルの件数: {zp02_count}")
-            # zp51nテーブルの件数を確認
-            zp51n_count = pd.read_sql_query("SELECT COUNT(*) FROM zp51n", conn).iloc[0, 0]
-            print(f"zp51nテーブルの件数: {zp51n_count}")
-            conn.close()
-        except Exception as e:
-            print(f"検証中にエラーが発生しました: {e}")
-    else:
-        print("\nインポート処理に失敗したため、検証はスキップします。")
-
-    print("\n--- テスト実行完了 ---")

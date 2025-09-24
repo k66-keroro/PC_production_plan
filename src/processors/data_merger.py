@@ -1,11 +1,59 @@
 import pandas as pd
 import os
-import sys
 
-# プロジェクトルートをsys.pathに追加
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from ..database.connection import get_db_connection
 
-from src.database.connection import get_db_connection
+def update_completion_history(conn, merged_df):
+    """
+    完了したオーダーの情報を履歴テーブルに保存する。
+    """
+    print("完了実績の履歴を更新します...")
+    try:
+        # 履歴テーブルが存在しない場合は作成する
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS completion_history (
+                "子指図番号" TEXT PRIMARY KEY,
+                "完了日" TIMESTAMP,
+                "計画終了日" TIMESTAMP,
+                "所要日" TIMESTAMP
+            )
+        """)
+
+        # 完了したオーダー（DLV日付がある）を抽出
+        completed_orders = merged_df[merged_df['DLV日付'].notna()].copy()
+
+        if completed_orders.empty:
+            print("新規の完了オーダーはありませんでした。")
+            return
+
+        # 履歴テーブルに必要なカラムを選択・整形
+        history_df = pd.DataFrame({
+            '子指図番号': completed_orders['指図番号'],
+            '完了日': pd.to_datetime(completed_orders['DLV日付'], errors='coerce'),
+            '計画終了日': pd.to_datetime(completed_orders['計画終了'], errors='coerce'),
+            '所要日': completed_orders['所要日_dt']
+        })
+        history_df.dropna(subset=['子指図番号', '完了日', '計画終了日', '所要日'], inplace=True)
+
+        # 既存の履歴を読み込む
+        try:
+            existing_history = pd.read_sql_query("SELECT * FROM completion_history", conn)
+            # 新規の履歴のみを抽出
+            new_history = history_df[~history_df['子指図番号'].isin(existing_history['子指図番号'])]
+        except pd.io.sql.DatabaseError:
+            # テーブルが存在しない場合は、全ての完了オーダーが新規履歴
+            new_history = history_df
+
+        if not new_history.empty:
+            # 新規履歴をDBに追記
+            new_history.to_sql('completion_history', conn, if_exists='append', index=False)
+            print(f"{len(new_history)}件の新規完了履歴を保存しました。")
+        else:
+            print("新規に保存する完了履歴はありませんでした。")
+
+    except Exception as e:
+        print(f"履歴更新中にエラーが発生しました: {e}")
+
 
 def get_merged_data():
     """
@@ -56,9 +104,10 @@ def get_merged_data():
         )
         print(f"zp02とzp51nをマージしました。結果: {len(merged_df)}件")
 
-        # 4. 表示用のカラムを選択・整形する (要件定義書v2.0に準拠)
-        #    カラム名が重複している可能性があるため、元のDataFrameから正しく選択する
+        # 5. 完了実績の履歴を更新
+        update_completion_history(conn, merged_df)
 
+        # 6. 表示用のカラムを選択・整形する
         final_df = pd.DataFrame()
         final_df['親指図番号'] = merged_df['親指図番号']
         final_df['親品目コード'] = merged_df['親品目コード']
@@ -69,7 +118,9 @@ def get_merged_data():
         final_df['所要日'] = merged_df['所要日_dt'].dt.strftime('%Y-%m-%d')
         final_df['子指図計画開始日'] = pd.to_datetime(merged_df['計画開始'], errors='coerce').dt.strftime('%Y-%m-%d')
         final_df['子指図計画終了日'] = pd.to_datetime(merged_df['計画終了'], errors='coerce').dt.strftime('%Y-%m-%d')
-        final_df['計画数量'] = merged_df['完成残数']
+
+        # 「計画数量」を数値に変換
+        final_df['計画数量'] = pd.to_numeric(merged_df['完成残数'], errors='coerce').fillna(0)
 
         # 進捗フィールドの作成
         def get_progress_status(row):
@@ -84,11 +135,29 @@ def get_merged_data():
             if pd.isna(row['親指図番号']):
                 return '対象外'
             return '未着手'
-
         final_df['進捗'] = merged_df.apply(get_progress_status, axis=1)
 
+        # 進捗詳細カラムの追加
+        final_df['工程(子)'] = merged_df['工程(子)']
+        final_df['C'] = merged_df['C']
+        final_df['A'] = merged_df['A']
+        final_df['C,A以外'] = merged_df['C,A以外']
+        final_df['検査'] = merged_df['検査']
+
         final_df['完成日'] = pd.to_datetime(merged_df['DLV日付'], errors='coerce').dt.strftime('%Y-%m-%d')
-        final_df['子MRP管理者'] = merged_df['MRP管理者']
+
+        # 「子MRP管理者」をZP51Nから取得
+        final_df['子MRP管理者'] = merged_df['子MRP管理者']
+
+        # MRP管理者グルーピング
+        def group_manager(manager):
+            if isinstance(manager, str) and manager.startswith('PC') and manager[2:].isdigit():
+                 num = int(manager[2:])
+                 if 1 <= num <= 6:
+                     return 'PC'
+            return manager
+
+        final_df['MRP管理者グループ'] = final_df['子MRP管理者'].apply(group_manager)
 
         # 遵守状況の計算
         plan_end_date = pd.to_datetime(final_df['子指図計画終了日'], errors='coerce')
@@ -119,27 +188,3 @@ def get_merged_data():
         if 'conn' in locals() and conn:
             conn.close()
             print("データベース接続を閉じました。")
-
-if __name__ == '__main__':
-    print("--- データマージャーのテスト実行 ---")
-
-    # 事前にデータインポートを実行しておく必要がある
-    # from src.importers.data_importer import import_data_from_files
-    # print("テストのために、まずデータインポートを実行します。")
-    # import_data_from_files()
-
-    final_data = get_merged_data()
-
-    if not final_data.empty:
-        print("\n--- 統合結果のプレビュー ---")
-        print(f"最終データフレームの形状: {final_data.shape}")
-        print("最初の5行:")
-        print(final_data.head())
-        print("\n最後の5行:")
-        print(final_data.tail())
-        print("\nカラム情報:")
-        final_data.info()
-    else:
-        print("データ統合に失敗したか、データがありませんでした。")
-
-    print("\n--- テスト実行完了 ---")
