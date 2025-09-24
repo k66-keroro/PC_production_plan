@@ -54,6 +54,18 @@ def update_plan_history(conn, df_zp02):
         print(f"計画履歴の更新中にエラーが発生しました: {e}")
 
 
+def _add_column_if_not_exists(conn, table_name, column_name, column_type):
+    """
+    テーブルに指定されたカラムが存在しない場合、追加する。
+    """
+    cursor = conn.cursor()
+    cursor.execute(f"PRAGMA table_info({table_name})")
+    columns = [row[1] for row in cursor.fetchall()]
+    if column_name not in columns:
+        print(f"'{table_name}'テーブルに'{column_name}'カラムを追加します...")
+        cursor.execute(f'ALTER TABLE {table_name} ADD COLUMN "{column_name}" {column_type}')
+        print(f"'{column_name}'カラムの追加が完了しました。")
+
 def update_completion_history(conn, merged_df):
     """
     完了したオーダーの情報を履歴テーブルに保存する。
@@ -68,10 +80,12 @@ def update_completion_history(conn, merged_df):
         conn.execute(f"""
             CREATE TABLE IF NOT EXISTS {completion_table} (
                 "子指図番号" TEXT PRIMARY KEY,
-                "完了日" TIMESTAMP,
-                "基準計画終了日" TIMESTAMP
+                "完了日" TIMESTAMP
             )
         """)
+
+        # スキーママイグレーション：旧バージョンとの互換性のため、カラムが存在しない場合は追加
+        _add_column_if_not_exists(conn, completion_table, "基準計画終了日", "TIMESTAMP")
 
         # 完了したオーダー（DLV日付がある）を抽出
         completed_orders = merged_df[merged_df['DLV日付'].notna()].copy()
