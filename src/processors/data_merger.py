@@ -223,8 +223,13 @@ def get_merged_data():
             # 完了履歴をマージ
             final_df = pd.merge(final_df, completion_history, on='子指図番号', how='left')
         except pd.io.sql.DatabaseError:
-            # 履歴テーブルがない場合は、カラムだけ追加
+            # 履歴テーブルがまだ存在しない場合は何もしない
+            pass
+
+        # マージ後にカラムが存在しない場合（履歴テーブルが空の場合など）に備えて、カラムを安全に追加
+        if '完了日' not in final_df.columns:
             final_df['完了日'] = pd.NaT
+        if '基準計画終了日' not in final_df.columns:
             final_df['基準計画終了日'] = pd.NaT
 
         # 遵守状況を計算
