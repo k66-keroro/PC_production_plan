@@ -19,7 +19,6 @@ def update_plan_history(conn, df_zp02):
                 "snapshot_date" TEXT,
                 "指図番号" TEXT,
                 "計画終了" TIMESTAMP,
-                "所要日" TIMESTAMP,
                 PRIMARY KEY ("snapshot_date", "指図番号")
             )
         """)
@@ -39,12 +38,11 @@ def update_plan_history(conn, df_zp02):
 
 
         # 保存するスナップショットデータを作成
-        snapshot_df = df_zp02[['指図番号', '計画終了', '所要日']].copy()
+        snapshot_df = df_zp02[['指図番号', '計画終了']].copy()
         snapshot_df['snapshot_date'] = today_str
 
         # 型を変換
         snapshot_df['計画終了'] = pd.to_datetime(snapshot_df['計画終了'], errors='coerce')
-        snapshot_df['所要日'] = pd.to_datetime(snapshot_df['所要日'], errors='coerce')
 
         # データベースに書き込む
         snapshot_df.to_sql(table_name, conn, if_exists='append', index=False)
