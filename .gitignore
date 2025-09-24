@@ -7,6 +7,7 @@ __pycache__/
 # Keep the directory, but ignore the database file itself
 data/sqlite/*.db
 !data/sqlite/.gitkeep
+data/*.db
 
 # Logs
 # Keep the directory, but ignore log files
