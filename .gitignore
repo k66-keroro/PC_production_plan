@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class$
+
+# Databases
+# Keep the directory, but ignore the database file itself
+data/sqlite/*.db
+!data/sqlite/.gitkeep
+
+# Logs
+# Keep the directory, but ignore log files
+logs/*.log
+!logs/.gitkeep
+# Ignore all log files, including in root
+*.log
+
+# Reports
+# Keep the directory, but ignore generated reports
+reports/*
+!reports/.gitkeep
+
+# IDE / Editor specific
+.vscode/
+.idea/
+*.swp
+*.swo
+.obsidian/
+.serena/
+
+# Python virtual environment
+python/
