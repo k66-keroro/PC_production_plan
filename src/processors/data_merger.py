@@ -233,9 +233,9 @@ def get_merged_data():
         final_df.loc[completed_mask, '遵守状況'] = '未遵守'
         final_df.loc[completed_mask & (final_df['完了日'] <= final_df['基準計画終了日']), '遵守状況'] = '遵守'
 
-        # 表示用に日付をフォーマット
-        final_df['完了日'] = final_df['完了日'].dt.strftime('%Y-%m-%d')
-        final_df['基準計画終了日'] = final_df['基準計画終了日'].dt.strftime('%Y-%m-%d')
+        # 表示用に日付をフォーマット（NaTを無視）
+        final_df['完了日'] = final_df['完了日'].dt.strftime('%Y-%m-%d').replace({pd.NaT: None})
+        final_df['基準計画終了日'] = final_df['基準計画終了日'].dt.strftime('%Y-%m-%d').replace({pd.NaT: None})
 
         # 8. ソート順を適用
         #    所要日、子MRP管理者、子指図番号
