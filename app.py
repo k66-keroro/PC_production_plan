@@ -112,13 +112,16 @@ with st.sidebar:
                 if not df.empty:
                     st.session_state.df = df
                     st.session_state.data_loaded = True
+                    #st.write("デバッグ: 統合データのカラム一覧", df.columns.tolist())
                     st.session_state.last_update_time = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+                    #print("DEBUG カラム一覧:", df.columns.tolist())
                     # キャッシュをクリアしてダッシュボードを強制的に更新
                     st.cache_data.clear()
                     st.success('データの更新が完了しました。')
                 else:
                     st.error('データの統合に失敗しました。詳細はコンソールログを確認してください。')
         else:
+            
             st.error('データファイルのインポートに失敗しました。詳細はコンソールログを確認してください。')
 
     if st.session_state.data_loaded:

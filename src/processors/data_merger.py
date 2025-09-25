@@ -106,6 +106,8 @@ def update_completion_history(conn, merged_df):
         # 計画履歴を読み込む
         plan_history = pd.read_sql_query(f"SELECT * FROM {plan_table}", conn)
         plan_history['計画終了'] = pd.to_datetime(plan_history['計画終了'])
+        print("DEBUG merged_df columns:", merged_df.columns.tolist())
+        print("DEBUG merged_df sample:", merged_df.head(3).to_dict())
 
         # 各完了オーダーの基準計画終了日（最も古い計画終了日）を見つける
         new_history_list = []
@@ -166,7 +168,7 @@ def get_merged_data():
         zp51_summary = zp51_summary.sort_values('所要日_dt').drop_duplicates(
             subset='子指図番号',
             keep='first'
-        )[['子指図番号', '所要日_dt', '子MRP管理者', '工程(子)']] # 必要なカラムのみ
+        )[['親指図番号','親品目コード', '親品目テキスト', '子指図番号', '所要日_dt', '子MRP管理者', '工程(子)']] # 必要なカラムを追加 # 必要なカラムのみ
         print(f"zp51nをサマリー化しました。結果: {len(zp51_summary)}件")
 
         # 5. ZP02マスターにZP51NサマリーをLEFT JOIN
