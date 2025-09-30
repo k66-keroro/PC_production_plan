@@ -1,0 +1,280 @@
+{
+  "main": {
+    "id": "b4b14d6838191ff3",
+    "type": "split",
+    "children": [
+      {
+        "id": "4ad6ec5911f337fd",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "09c463f3c7bb1326",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "README.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "README"
+            }
+          },
+          {
+            "id": "1c4f63da347c0762",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "システム設計書.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "システム設計書"
+            }
+          },
+          {
+            "id": "68ef288d3add63b0",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "要件定義書v2.0.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "要件定義書v2.0"
+            }
+          },
+          {
+            "id": "dcf747ef39ff9315",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "要件定義書v2.0.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "要件定義書v2.0"
+            }
+          },
+          {
+            "id": "b933a0478ee3f187",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "無題のファイル.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "無題のファイル"
+            }
+          },
+          {
+            "id": "737506ebf6e9e157",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "無題のファイル.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "無題のファイル"
+            }
+          },
+          {
+            "id": "defdfa95c990b913",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "無題のファイル.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "無題のファイル"
+            }
+          }
+        ],
+        "currentTab": 6
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "3f7388351c82bc8b",
+    "type": "split",
+    "children": [
+      {
+        "id": "43e8243aa98e7fec",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c3742a0a50dd98cb",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "ファイルエクスプローラ"
+            }
+          },
+          {
+            "id": "50ec9ce8b7e74218",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "検索"
+            }
+          },
+          {
+            "id": "b624c88aab028aa4",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "ブックマーク"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "6c5424be298dedf9",
+    "type": "split",
+    "children": [
+      {
+        "id": "d8bfc1da6ebd95d6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0f6b84e0e23fa286",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "タスク管理表.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "タスク管理表へのバックリンク"
+            }
+          },
+          {
+            "id": "6abd6230e6b2cb2c",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "タスク管理表.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "タスク管理表からのアウトゴーイングリンク"
+            }
+          },
+          {
+            "id": "d53e7e95cb9a85f6",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "タグ"
+            }
+          },
+          {
+            "id": "85f28e42bc4f2e4b",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "タスク管理表.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "タスク管理表のアウトライン"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:クイックスイッチャーを開く": false,
+      "graph:グラフビューを開く": false,
+      "canvas:新規キャンバスを作成": false,
+      "daily-notes:今日のデイリーノートを開く": false,
+      "templates:テンプレートを挿入": false,
+      "command-palette:コマンドパレットを開く": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "defdfa95c990b913",
+  "lastOpenFiles": [
+    "システム設計書.md",
+    "data/production.db-journal",
+    "data/production.db",
+    "error報告.md",
+    "gemini.md",
+    "README.md",
+    "Clippings/YAML ファイルで AI エージェントを構築する cagent.md",
+    "Clippings",
+    "無題のファイル.md",
+    "src/processors/__pycache__/data_merger.cpython-311.pyc.2191117953920",
+    "claude.md",
+    "要件定義書v2.0.md",
+    "app.py",
+    "要件定義書.md",
+    "タスク管理表.md",
+    "src/utils/config.py",
+    "src/utils/__init__.py",
+    "src/ui/__init__.py",
+    "src/ui",
+    "src/processors/data_merger.py"
+  ]
+}

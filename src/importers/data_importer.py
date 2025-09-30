@@ -56,11 +56,9 @@ def _load_and_insert(conn: sqlite3.Connection, file_path: str, table_name: str, 
         df = pd.read_csv(
             file_path,
             sep='\t',
-            header=None,
-            names=columns,
+            header=0,  # 最初の行をヘッダーとして使用
             encoding=encoding,
             dtype=str,  # 全てのカラムを文字列として読み込み、後の処理で型変換する
-            skiprows=1, # 先頭行（ヘッダー）をスキップする
             on_bad_lines='warn' # 不正な行を警告として表示
         )
 

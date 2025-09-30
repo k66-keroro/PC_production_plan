@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from datetime import date
+from datetime import date, datetime
 
 from ..database.connection import get_db_connection
 
@@ -162,13 +162,13 @@ def get_merged_data():
         print(f"ZP02のPC対象オーダーをマスターデータとします。結果: {len(base_df)}件")
 
         # 4. ZP51Nをサマリー化する (所要日の最小値を取得)
-        df_zp51n['所要日_dt'] = pd.to_datetime(df_zp51n['所要日'], errors='coerce')
+        df_zp51n['所要日_dt'] = pd.to_datetime(df_zp51n['所要日'], infer_datetime_format=True, dayfirst=False, errors='coerce')
         zp51_summary = df_zp51n.dropna(subset=['所要日_dt', '子指図番号'])
         # drop_duplicatesの前に、必要なカラムだけを選択しておく
         zp51_summary = zp51_summary.sort_values('所要日_dt').drop_duplicates(
             subset='子指図番号',
             keep='first'
-        )[['親指図番号','親品目コード', '親品目テキスト', '子指図番号', '所要日_dt', '子MRP管理者', '工程(子)']] # 必要なカラムを追加 # 必要なカラムのみ
+        )[['親指図番号','親品目コード', '親品目テキスト', '子指図番号', '所要日_dt', '子MRP管理者', '工程(子)', '進捗', '親指図計画開始日', '親指図計画終了日', '子指図計画開始日', '子指図計画終了日']] # 必要なカラムを追加
         print(f"zp51nをサマリー化しました。結果: {len(zp51_summary)}件")
 
         # 5. ZP02マスターにZP51NサマリーをLEFT JOIN
@@ -181,6 +181,14 @@ def get_merged_data():
         )
         print(f"PC対象のZP02マスターにZP51NサマリーをLEFT JOINしました。結果: {len(merged_df)}件")
 
+        # ZP02の日付カラムをdatetimeに変換
+        for col in ['計画開始', '計画終了', 'DLV日付']:
+            merged_df[col] = pd.to_datetime(merged_df[col], infer_datetime_format=True, dayfirst=False, errors='coerce')
+
+        # ZP51Nの日付カラムをdatetimeに変換 (merged_dfに結合されたもの)
+        for col in ['親指図計画開始日', '親指図計画終了日', '子指図計画開始日', '子指図計画終了日']:
+            merged_df[col] = pd.to_datetime(merged_df[col], infer_datetime_format=True, dayfirst=False, errors='coerce')
+
         # 6. 完了実績の履歴を更新 (JOIN後の全PCデータが対象)
         update_completion_history(conn, merged_df)
 
@@ -192,29 +200,42 @@ def get_merged_data():
         final_df['子指図番号'] = merged_df['指図番号']
         final_df['子品目コード'] = merged_df['品目コード']
         final_df['子品目テキスト'] = merged_df['品目テキスト']
-        final_df['所要日'] = merged_df['所要日_dt'].dt.strftime('%Y-%m-%d').replace({pd.NaT: None})
-        final_df['子指図計画開始日'] = pd.to_datetime(merged_df['計画開始'], errors='coerce').dt.strftime('%Y-%m-%d').replace({pd.NaT: None})
-        final_df['子指図計画終了日'] = pd.to_datetime(merged_df['計画終了'], errors='coerce').dt.strftime('%Y-%m-%d').replace({pd.NaT: None})
+
+        # 日付カラムの変換と所要日代替処理
+        final_df['所要日_dt'] = merged_df['所要日_dt'] # ZP51Nから既にdatetimeとして取得
+        final_df['子指図計画開始日_dt'] = merged_df['計画開始'] # ZP02からdatetimeとして取得
+        final_df['子指図計画終了日_dt'] = merged_df['計画終了'] # ZP02からdatetimeとして取得
+
+        # 所要日がない場合は計画終了日を代替とする
+        final_df['基準所要日'] = final_df['所要日_dt'].fillna(final_df['子指図計画終了日_dt'])
+
+        final_df['所要日'] = final_df['所要日_dt'].dt.strftime('%Y-%m-%d').replace({pd.NaT: None})
+        final_df['子指図計画開始日'] = final_df['子指図計画開始日_dt'].dt.strftime('%Y-%m-%d').replace({pd.NaT: None})
+        final_df['子指図計画終了日'] = final_df['子指図計画終了日_dt'].dt.strftime('%Y-%m-%d').replace({pd.NaT: None})
+        
         final_df['計画数量'] = pd.to_numeric(merged_df['完成残数'], errors='coerce').fillna(0)
-        # ZP51Nに情報がない場合もZP02のMRP管理者を正とする
-        final_df['子MRP管理者'] = merged_df['子MRP管理者'].fillna(merged_df['MRP管理者'])
+        # ZP51Nに情報がない場合、ZP02のMRP管理者とMRP管理者グループを結合して使用
+        final_df['子MRP管理者'] = merged_df['子MRP管理者'].fillna(
+            merged_df['MRP管理者'].fillna('') + merged_df['MRP管理者グループ'].fillna('')
+        ).replace({'': None})
 
         # [Req 3] 進捗フィールドの作成
-        final_df['進捗'] = merged_df['工程(子)'].apply(lambda x: '完了' if isinstance(x, str) and '○' in x else '未完了')
+        final_df['進捗'] = merged_df['進捗']
 
         # [Req 2.2] 生産タイプを分類
         def get_production_type(manager):
             if isinstance(manager, str):
-                if manager in ['PC1', 'PC2', 'PC3']: return '内製'
-                if manager in ['PC4', 'PC5', 'PC6']: return '外製'
+                normalized_manager = manager.strip().upper()
+                if normalized_manager in ['PC1', 'PC2', 'PC3']: return '内製'
+                if normalized_manager in ['PC4', 'PC5', 'PC6']: return '外製'
             return 'その他'
         final_df['生産タイプ'] = final_df['子MRP管理者'].apply(get_production_type)
 
         # [Req 1] 遵守状況の計算
         try:
             completion_history = pd.read_sql_query("SELECT * FROM completion_history", conn)
-            completion_history['完了日'] = pd.to_datetime(completion_history['完了日'])
-            completion_history['基準計画終了日'] = pd.to_datetime(completion_history['基準計画終了日'])
+            completion_history['完了日'] = pd.to_datetime(completion_history['完了日'], infer_datetime_format=True, dayfirst=False, errors='coerce')
+            completion_history['基準計画終了日'] = pd.to_datetime(completion_history['基準計画終了日'], infer_datetime_format=True, dayfirst=False, errors='coerce')
             final_df = pd.merge(final_df, completion_history, on='子指図番号', how='left')
         except pd.io.sql.DatabaseError:
             pass # テーブルがなければ何もしない
@@ -222,18 +243,43 @@ def get_merged_data():
         if '完了日' not in final_df.columns: final_df['完了日'] = pd.NaT
         if '基準計画終了日' not in final_df.columns: final_df['基準計画終了日'] = pd.NaT
 
+        # 新しい遵守状況ロジック
+        today = pd.Timestamp.now().normalize() # 今日の日付（時間なし）
+
         final_df['遵守状況'] = '未完成'
         # DLVステータスを持つものを「完了」と判断する
         completed_mask = merged_df['指図ステータス'].str.contains('DLV', na=False)
-        final_df.loc[completed_mask, '遵守状況'] = '未遵守'
+        
+        # 完了オーダーの遵守/未遵守
         final_df.loc[completed_mask & (final_df['完了日'] <= final_df['基準計画終了日']), '遵守状況'] = '遵守'
+        final_df.loc[completed_mask & (final_df['完了日'] > final_df['基準計画終了日']), '遵守状況'] = '未遵守'
+
+        # 未完成オーダーで所要日を過ぎているものを「遅延」とする
+        # 基準所要日があり、かつ今日より過去の場合
+        delayed_mask = (~completed_mask) & (final_df['基準所要日'].notna()) & (final_df['基準所要日'] < today)
+        final_df.loc[delayed_mask, '遵守状況'] = '遅延'
+
+        # 来月以降の生産完了（完成）の可視化 - 先行生産
+        # 完了済みで、完了日が基準所要日より7日以上早く、かつ基準所要日が未来の場合
+        early_production_mask = (completed_mask) & \
+                                (final_df['完了日'].notna()) & \
+                                (final_df['基準所要日'].notna()) & \
+                                (final_df['完了日'] < (final_df['基準所要日'] - pd.Timedelta(days=7))) & \
+                                (final_df['基準所要日'] > today)
+        final_df['先行生産'] = False
+        final_df.loc[early_production_mask, '先行生産'] = True
+
+        # 計画終了日と所要日の乖離
+        final_df['所要日乖離日数'] = (final_df['子指図計画終了日_dt'] - final_df['基準所要日']).dt.days
 
         final_df['完了日'] = final_df['完了日'].dt.strftime('%Y-%m-%d').replace({pd.NaT: None})
         final_df['基準計画終了日'] = final_df['基準計画終了日'].dt.strftime('%Y-%m-%d').replace({pd.NaT: None})
+        final_df['基準所要日'] = final_df['基準所要日'].dt.strftime('%Y-%m-%d').replace({pd.NaT: None})
+
 
         # 8. ソート順を適用
         final_df = final_df.sort_values(
-            by=['所要日', '子MRP管理者', '子指図番号'],
+            by=['基準所要日', '子MRP管理者', '子指図番号'], # 所要日を基準所要日に変更
             ascending=[True, True, True],
             na_position='last' # NaN値を末尾に
         ).reset_index(drop=True)

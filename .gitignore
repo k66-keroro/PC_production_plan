@@ -1,33 +1,54 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
-*$py.class$
+*.pyc
+*.pyd
+*.pyo
 
-# Databases
-# Keep the directory, but ignore the database file itself
-data/sqlite/*.db
-!data/sqlite/.gitkeep
-data/*.db
+# C extensions
+*.so
 
-# Logs
-# Keep the directory, but ignore log files
-logs/*.log
-!logs/.gitkeep
-# Ignore all log files, including in root
-*.log
+# Distribution / packaging
+.Python
+build/
+dist/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Reports
-# Keep the directory, but ignore generated reports
-reports/*
-!reports/.gitkeep
+# Unit test / coverage reports
+.coverage
+.tox/
+htmlcov/
+.pytest_cache/
 
-# IDE / Editor specific
+# Editor directories and files
 .vscode/
 .idea/
 *.swp
 *.swo
-.obsidian/
-.serena/
+*~
+.DS_Store
 
-# Python virtual environment
-python/
+# OS-specific files
+Thumbs.db
+.DS_Store
+
+# Jupyter Notebook files
+.ipynb_checkpoints
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Gemini-related files
+.gemini/
+gemini.md
+
+# Project-specific ignores
+data/*.db
+*.log
+PC_PLAN/
+error報告.md
+Clippings/
